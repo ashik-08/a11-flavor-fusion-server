@@ -57,6 +57,30 @@ async function run() {
       }
     });
 
+    // food items related API (foodItemsCollection)
+    // add new food items to the db
+    app.post("/api/v1/add-food-item", async (req, res) => {
+      try {
+        const newFoodItem = req.body;
+        // query to find all food items in the collection
+        const query = await foodItemsCollection.find().toArray();
+        // check if the food item already exists
+        const found = query.find(
+          (search) =>
+            search.food_name === newFoodItem.food_name &&
+            search.food_category === newFoodItem.food_category
+        );
+        if (found) {
+          return res.send({ message: "Already exists" });
+        }
+        const result = await foodItemsCollection.insertOne(newFoodItem);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        return res.send({ error: true, message: error.message });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
