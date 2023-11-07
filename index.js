@@ -76,6 +76,7 @@ async function run() {
         const category = req.query.category;
         const sortField = req.query.sortField;
         const sortOrder = req.query.sortOrder;
+        const search = req.query.search;
 
         // pagination
         const page = Number(req.query.page);
@@ -85,8 +86,14 @@ async function run() {
         if (category) {
           filter = { food_category: category };
         }
+        if (category === "All") {
+          filter = {};
+        }
         if (sortField && sortOrder) {
           sort[sortField] = sortOrder;
+        }
+        if (search) {
+          filter.food_name = { $regex: search, $options: "i" };
         }
 
         const result = await foodItemsCollection
