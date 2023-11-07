@@ -37,7 +37,7 @@ async function run() {
 
     // user related API (usersCollection)
     // add new user credentials to the db
-    app.post("/api/v1/add-user", async (req, res) => {
+    app.post("/api/v1/users", async (req, res) => {
       try {
         const user = req.body;
         // query to find all users in the collection
@@ -58,8 +58,8 @@ async function run() {
     });
 
     // food items related API (foodItemsCollection)
-    // add new food items to the db
-    app.post("/api/v1/add-food-item", async (req, res) => {
+    // add new food item to the db
+    app.post("/api/v1/food-items", async (req, res) => {
       try {
         const newFoodItem = req.body;
         // query to find all food items in the collection
