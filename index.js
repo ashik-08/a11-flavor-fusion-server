@@ -58,6 +58,53 @@ async function run() {
     });
 
     // food items related API (foodItemsCollection)
+    // get all food items from the db
+
+    // filtering API format
+    // /api/v1/food-items?category=Salad
+
+    // sorting API format
+    // /api/v1/food-items?sortField=price&sortOrder=asc
+    // /api/v1/food-items?sortField=quantity&sortOrder=desc
+
+    // pagination format
+    // /api/v1/food-items?page=1&limit=10
+    app.get("/api/v1/food-items", async (req, res) => {
+      try {
+        let filter = {};
+        let sort = {};
+        const category = req.query.category;
+        const sortField = req.query.sortField;
+        const sortOrder = req.query.sortOrder;
+
+        // pagination
+        const page = Number(req.query.page);
+        const limit = Number(req.query.limit);
+        const skip = (page - 1) * limit;
+
+        if (category) {
+          filter = { food_category: category };
+        }
+        if (sortField && sortOrder) {
+          sort[sortField] = sortOrder;
+        }
+
+        const result = await foodItemsCollection
+          .find(filter)
+          .skip(skip)
+          .limit(limit)
+          .sort(sort)
+          .toArray();
+
+        // count total data
+        const totalDataCount = await foodItemsCollection.countDocuments();
+        res.send({ totalDataCount, result });
+      } catch (error) {
+        console.log(error);
+        return res.send({ error: true, message: error.message });
+      }
+    });
+
     // add new food item to the db
     app.post("/api/v1/food-items", async (req, res) => {
       try {
