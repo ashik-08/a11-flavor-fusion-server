@@ -67,6 +67,9 @@ async function run() {
     // /api/v1/food-items?sortField=price&sortOrder=asc
     // /api/v1/food-items?sortField=quantity&sortOrder=desc
 
+    // searching API format
+    // /api/v1/food-items?search=bbq
+
     // pagination format
     // /api/v1/food-items?page=1&limit=10
     app.get("/api/v1/food-items", async (req, res) => {
@@ -106,6 +109,22 @@ async function run() {
         // count total data
         const totalDataCount = await foodItemsCollection.countDocuments();
         res.send({ totalDataCount, result });
+      } catch (error) {
+        console.log(error);
+        return res.send({ error: true, message: error.message });
+      }
+    });
+
+    // get single food item by id
+    app.get("/api/v1/food-item/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await foodItemsCollection.findOne(query);
+        if (!result) {
+          return res.send({ message: "No data found" });
+        }
+        res.send(result);
       } catch (error) {
         console.log(error);
         return res.send({ error: true, message: error.message });
