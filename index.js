@@ -34,6 +34,7 @@ async function run() {
     const database = client.db("flavor-fusion");
     const usersCollection = database.collection("users");
     const foodItemsCollection = database.collection("food-items");
+    const foodOrdersCollection = database.collection("food-orders");
 
     // user related API (usersCollection)
     // add new user credentials to the db
@@ -148,6 +149,44 @@ async function run() {
         }
         const result = await foodItemsCollection.insertOne(newFoodItem);
         res.send(result);
+      } catch (error) {
+        console.log(error);
+        return res.send({ error: true, message: error.message });
+      }
+    });
+
+    // add ordered food item to the db
+    app.post("/api/v1/food-orders", async (req, res) => {
+      try {
+        const newOrder = req.body;
+        const query = { _id: new ObjectId(newOrder.food_id) };
+        const find = await foodItemsCollection.findOne(query);
+        // requirements check
+        if (
+          find.added_by_name === newOrder.buyer_name &&
+          find.added_by_email === newOrder.buyer_email
+        ) {
+          return res.send({ message: "Own food item" });
+        }
+        if (find.quantity === 0) {
+          return res.send({ message: "Item is not available" });
+        }
+        if (newOrder.ordered > find.quantity) {
+          return res.send({ message: "Less item available" });
+        }
+        // add order
+        const updateQuery = {
+          $set: {
+            quantity: find.quantity - newOrder.ordered,
+            order: find.order + newOrder.ordered,
+          },
+        };
+        const orderResult = await foodOrdersCollection.insertOne(newOrder);
+        const updateResult = await foodItemsCollection.updateOne(
+          query,
+          updateQuery
+        );
+        res.send({ orderResult, updateResult });
       } catch (error) {
         console.log(error);
         return res.send({ error: true, message: error.message });
