@@ -172,6 +172,21 @@ async function run() {
       }
     });
 
+    // delete food item from db using id
+    app.delete("/api/v1/my-added-foods/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        console.log(id);
+        const query = { _id: new ObjectId(id) };
+        const result = await foodItemsCollection.deleteOne(query);
+        console.log(result);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        return res.send({ error: true, message: error.message });
+      }
+    });
+
     // food orders related API (foodOrdersCollection)
     // add ordered food item to the db
     app.post("/api/v1/food-orders", async (req, res) => {
