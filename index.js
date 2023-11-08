@@ -61,18 +61,16 @@ async function run() {
     // food items related API (foodItemsCollection)
     // get all food items from the db
 
-    // filtering API format
-    // /api/v1/food-items?category=Salad
+    // GET request from AllFoodPage --> AllFoodItems component
+    // filtering API format ----- { /api/v1/food-items?category=Salad }
 
     // sorting API format
     // /api/v1/food-items?sortField=price&sortOrder=asc
     // /api/v1/food-items?sortField=quantity&sortOrder=desc
 
-    // searching API format
-    // /api/v1/food-items?search=bbq
+    // searching API format ----- { /api/v1/food-items?search=bbq }
 
-    // pagination format
-    // /api/v1/food-items?page=1&limit=10
+    // pagination format ----- { /api/v1/food-items?page=1&limit=10 }
     app.get("/api/v1/food-items", async (req, res) => {
       try {
         let filter = {};
@@ -155,6 +153,26 @@ async function run() {
       }
     });
 
+    // my added food items related API (foodItemsCollection)
+    // get all my added food items from the db
+    // GET request from MyAddedFoodPage
+    // searching API format ----- { /api/v1/food-items?email=admin@fusion.com }
+    app.get("/api/v1/my-added-foods", async (req, res) => {
+      try {
+        const email = req.query.email;
+        let filter = {};
+        if (email) {
+          filter = { added_by_email: email };
+        }
+        const result = await foodItemsCollection.find(filter).toArray();
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        return res.send({ error: true, message: error.message });
+      }
+    });
+
+    // food orders related API (foodOrdersCollection)
     // add ordered food item to the db
     app.post("/api/v1/food-orders", async (req, res) => {
       try {
