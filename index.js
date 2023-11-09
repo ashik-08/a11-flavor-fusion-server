@@ -153,10 +153,10 @@ async function run() {
       }
     });
 
-    // my added food items related API (foodItemsCollection)
-    // get all my added food items from the db
+    // own added food items related API (foodItemsCollection)
+    // get all own added food items from the db
     // GET request from MyAddedFoodPage
-    // searching API format ----- { /api/v1/food-items?email=admin@fusion.com }
+    // searching API format ----- { /api/v1/my-added-foods?email=admin@fusion.com }
     app.get("/api/v1/my-added-foods", async (req, res) => {
       try {
         const email = req.query.email;
@@ -172,7 +172,35 @@ async function run() {
       }
     });
 
-    // delete food item from db using id
+    // update own added food item to db from UpdateFoodPage
+    app.patch("/api/v1/my-added-foods", async (req, res) => {
+      try {
+        const id = req.body.id;
+        const filter = { _id: new ObjectId(id) };
+        const query = await foodItemsCollection.findOne(filter);
+        if (!query) {
+          return res.send({ message: "No data found" });
+        }
+        const updateQuery = {
+          $set: {
+            food_name: req.body.food_name,
+            food_image: req.body.food_image,
+            food_category: req.body.food_category,
+            quantity: req.body.quantity,
+            price: req.body.price,
+            origin: req.body.origin,
+            ingredients: req.body.ingredients,
+          },
+        };
+        const result = await foodItemsCollection.updateOne(filter, updateQuery);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        return res.send({ error: true, message: error.message });
+      }
+    });
+
+    // delete own added food item from db using id
     app.delete("/api/v1/my-added-foods/:id", async (req, res) => {
       try {
         const id = req.params.id;
