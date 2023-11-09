@@ -204,10 +204,8 @@ async function run() {
     app.delete("/api/v1/my-added-foods/:id", async (req, res) => {
       try {
         const id = req.params.id;
-        console.log(id);
         const query = { _id: new ObjectId(id) };
         const result = await foodItemsCollection.deleteOne(query);
-        console.log(result);
         res.send(result);
       } catch (error) {
         console.log(error);
@@ -267,6 +265,38 @@ async function run() {
         }
         const result = await foodOrdersCollection.find(filter).toArray();
         res.send(result);
+      } catch (error) {
+        console.log(error);
+        return res.send({ error: true, message: error.message });
+      }
+    });
+
+    // delete own ordered food item from db using id
+    app.delete("/api/v1/my-ordered-foods/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const deleteQuery = { _id: new ObjectId(id) };
+        const findOrder = await foodOrdersCollection.findOne(deleteQuery);
+
+        const foodId = { _id: new ObjectId(findOrder.food_id) };
+        const foodItem = await foodItemsCollection.findOne(foodId);
+
+        // update order
+        const updateQuery = {
+          $set: {
+            quantity: foodItem.quantity + findOrder.ordered,
+            order: foodItem.order - findOrder.ordered,
+          },
+        };
+
+        const updateFoodResult = await foodItemsCollection.updateOne(
+          foodId,
+          updateQuery
+        );
+        const orderDeleteResult = await foodOrdersCollection.deleteOne(
+          deleteQuery
+        );
+        res.send({ orderDeleteResult, updateFoodResult });
       } catch (error) {
         console.log(error);
         return res.send({ error: true, message: error.message });
