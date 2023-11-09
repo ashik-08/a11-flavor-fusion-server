@@ -254,6 +254,25 @@ async function run() {
       }
     });
 
+    // own ordered food items related API (foodOrdersCollection)
+    // get all own ordered food items from the db
+    // GET request from MyOrderedFoodPage
+    // searching API format ----- { /api/v1/my-ordered-foods?email=admin@fusion.com }
+    app.get("/api/v1/my-ordered-foods", async (req, res) => {
+      try {
+        const email = req.query.email;
+        let filter = {};
+        if (email) {
+          filter = { buyer_email: email };
+        }
+        const result = await foodOrdersCollection.find(filter).toArray();
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        return res.send({ error: true, message: error.message });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
