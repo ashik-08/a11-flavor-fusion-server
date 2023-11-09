@@ -114,6 +114,21 @@ async function run() {
       }
     });
 
+    // get top selling food items
+    app.get("/api/v1/top-food-items", async (req, res) => {
+      try {
+        const result = await foodItemsCollection
+          .find()
+          .sort({ order: -1 })
+          .limit(6)
+          .toArray();
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        return res.send({ error: true, message: error.message });
+      }
+    });
+
     // get single food item by id
     app.get("/api/v1/food-item/:id", async (req, res) => {
       try {
