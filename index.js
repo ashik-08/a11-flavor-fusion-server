@@ -1,18 +1,81 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-require("dotenv").config();
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+require("dotenv").config();
 const port = process.env.PORT || 5001;
 
 // middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    // origin: ["http://localhost:5173"],
+    origin: ["https://a11-flavor-fusion.web.app"],
     credentials: true,
   })
 );
 app.use(express.json());
+app.use(cookieParser());
+
+// cookies token middleware function
+const verifyToken = async (req, res, next) => {
+  const token = req.cookies?.token;
+  console.log("Value of token in middleware: ", token);
+  if (!token) {
+    return res.status(401).send({ auth: false, message: "Not authorized" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    // error
+    if (err) {
+      console.log(err);
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+    // if token is valid then it would be decoded
+    console.log("Value in the token: ", decoded);
+    req.user = decoded;
+    next();
+  });
+};
+
+// auth related api
+app.post("/api/v1/jwt", async (req, res) => {
+  try {
+    const user = req.body;
+    console.log("from /api/v1/jwt -- user:", user);
+    const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+      expiresIn: "2h",
+    });
+    console.log("from /api/v1/jwt -- token:", token);
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production" ? true : false,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      })
+      .send({ success: true });
+  } catch (error) {
+    console.log(error);
+    return res.send({ error: true, message: error.message });
+  }
+});
+
+app.post("/api/v1/logout", async (req, res) => {
+  try {
+    const user = req.body;
+    console.log("from /api/v1/logout -- logging out:", user);
+    res
+      .clearCookie("token", {
+        maxAge: 0,
+        secure: process.env.NODE_ENV === "production" ? true : false,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      })
+      .send({ success: true });
+  } catch (error) {
+    console.log(error);
+    return res.send({ error: true, message: error.message });
+  }
+});
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ya8cack.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -28,7 +91,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     // connect to the database & access it's collections
     const database = client.db("flavor-fusion");
@@ -130,7 +193,7 @@ async function run() {
     });
 
     // get single food item by id
-    app.get("/api/v1/food-item/:id", async (req, res) => {
+    app.get("/api/v1/food-item/:id", verifyToken, async (req, res) => {
       try {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
@@ -172,8 +235,15 @@ async function run() {
     // get all own added food items from the db
     // GET request from MyAddedFoodPage
     // searching API format ----- { /api/v1/my-added-foods?email=admin@fusion.com }
-    app.get("/api/v1/my-added-foods", async (req, res) => {
+    app.get("/api/v1/my-added-foods", verifyToken, async (req, res) => {
       try {
+        // console.log("From /api/v1/my-added-foods -- Token: ", req.cookies?.token);
+        // console.log("User in the valid token", req.user);
+        if (req.query?.email !== req.user?.email) {
+          return res
+            .status(401)
+            .send({ message: "Unauthorized Access Forbidden" });
+        }
         const email = req.query.email;
         let filter = {};
         if (email) {
@@ -271,8 +341,15 @@ async function run() {
     // get all own ordered food items from the db
     // GET request from MyOrderedFoodPage
     // searching API format ----- { /api/v1/my-ordered-foods?email=admin@fusion.com }
-    app.get("/api/v1/my-ordered-foods", async (req, res) => {
+    app.get("/api/v1/my-ordered-foods", verifyToken, async (req, res) => {
       try {
+        // console.log("From /api/v1/my-ordered-foods -- Token: ", req.cookies?.token);
+        // console.log("User in the valid token", req.user);
+        if (req.query?.email !== req.user?.email) {
+          return res
+            .status(401)
+            .send({ message: "Unauthorized Access Forbidden" });
+        }
         const email = req.query.email;
         let filter = {};
         if (email) {
